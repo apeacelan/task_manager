@@ -1,0 +1,325 @@
+{% extends 'base.html' %}
+{% block title %}My Tasks{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1 text-dark">Task Management</h2>
+            <p class="text-muted small mb-0">Track, organize, and complete your daily goals.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <span class="badge bg-soft-primary text-primary border px-3 py-2">
+                Total: {{ tasks|length }} Tasks
+            </span>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary btn-sm shadow-sm">
+                <i class="fas fa-th-large me-1"></i> Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- FILTERS SECTION -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body py-3">
+            <form method="GET" action="{{ url_for('tasks') }}" class="row g-3 align-items-center">
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold text-muted">Status</label>
+                    <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+                        <option value="all" {% if current_filters.status == 'all' %}selected{% endif %}>All Tasks</option>
+                        <option value="pending" {% if current_filters.status == 'pending' %}selected{% endif %}>Active Only</option>
+                        <option value="completed" {% if current_filters.status == 'completed' %}selected{% endif %}>Completed Only</option>
+                        <option value="overdue" {% if current_filters.status == 'overdue' %}selected{% endif %}>Overdue Only</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold text-muted">Priority</label>
+                    <select name="priority" class="form-select form-select-sm" onchange="this.form.submit()">
+                        <option value="">All Priorities</option>
+                        <option value="High" {% if current_filters.priority == 'High' %}selected{% endif %}>High</option>
+                        <option value="Medium" {% if current_filters.priority == 'Medium' %}selected{% endif %}>Medium</option>
+                        <option value="Low" {% if current_filters.priority == 'Low' %}selected{% endif %}>Low</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold text-muted">Category</label>
+                    <select name="category" class="form-select form-select-sm" onchange="this.form.submit()">
+                        <option value="">All Categories</option>
+                        {% for category in categories %}
+                        <option value="{{ category.id }}" 
+                            {% if current_filters.category|string == category.id|string %}selected{% endif %}>
+                            {{ category.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-3 d-flex align-items-end">
+                    <a href="{{ url_for('tasks') }}" class="btn btn-outline-secondary btn-sm w-100">Clear Filters</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm sticky-top" style="top: 20px;">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-4"><i class="fas fa-plus-circle text-primary me-2"></i>Create New Task</h5>
+                    <form method="POST" action="{{ url_for('add_task') }}">
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted text-uppercase">Task Title</label>
+                            <input type="text" name="title" class="form-control" placeholder="What needs to be done?" required>
+                        </div>
+                        
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label class="form-label small fw-bold text-muted text-uppercase">Priority</label>
+                                <select name="priority" class="form-select">
+                                    <option value="High">High</option>
+                                    <option value="Medium" selected>Medium</option>
+                                    <option value="Low">Low</option>
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small fw-bold text-muted text-uppercase">Risk Level</label>
+                                <select name="risk" class="form-select">
+                                    <option value="Normal">Normal</option>
+                                    <option value="Important">Important</option>
+                                    <option value="Critical">Critical</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted text-uppercase">Category</label>
+                            <select name="category_id" class="form-select">
+                                <option value="">No Category</option>
+                                {% for category in categories %}
+                                <option value="{{ category.id }}">{{ category.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label small fw-bold text-muted text-uppercase">Deadline</label>
+                            <input type="date" name="deadline" class="form-control" value="{{ today }}">
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100 fw-bold py-2 shadow-sm">
+                            Add Task <i class="fas fa-paper-plane ms-2"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <!-- ACTIVE TASKS -->
+            {% set active_tasks = tasks|selectattr('completed', 'equalto', 0)|list %}
+            {% if active_tasks %}
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white border-0">
+                    <h6 class="fw-bold text-primary mb-0">
+                        <i class="fas fa-clock me-2"></i>Active Tasks ({{ active_tasks|length }})
+                    </h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-light text-muted small text-uppercase">
+                                <tr>
+                                    <th class="ps-4 py-3">Task Details</th>
+                                    <th>Priority</th>
+                                    <th>Deadline</th>
+                                    <th>Urgency</th>
+                                    <th class="text-end pe-4">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for task in active_tasks %}
+                                <tr class="{% if task.overdue %}table-danger{% endif %}">
+                                    <td class="ps-4 py-3">
+                                        <div class="d-flex align-items-center">
+                                            <div class="status-indicator me-3 
+                                                {% if task.overdue %}overdue
+                                                {% elif task.urgency > 70 %}high
+                                                {% elif task.urgency > 30 %}medium
+                                                {% else %}low{% endif %}">
+                                            </div>
+                                            <div>
+                                                <div class="fw-bold text-dark">
+                                                    {{ task.title }}
+                                                </div>
+                                                {% if task.category_name %}
+                                                <span class="badge rounded-pill bg-light text-dark border-0 small fw-normal">
+                                                    <i class="fas fa-tag me-1 text-primary"></i> 
+                                                    {{ task.category_name }}
+                                                </span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="priority-badge-{{ task.priority|lower }}">
+                                            {{ task.priority }}
+                                        </span>
+                                    </td>
+                                    <td class="small text-muted">
+                                        <i class="far fa-calendar-alt me-1"></i> 
+                                        {{ task.deadline or 'No Date' }}
+                                        {% if task.overdue %}
+                                        <span class="badge bg-danger ms-1">Overdue</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="progress rounded-pill" style="height: 6px; width: 80px;" 
+                                             title="Urgency Score: {{ task.urgency }}">
+                                            <div class="progress-bar bg-primary" style="width: {{ [task.urgency, 100]|min }}%"></div>
+                                        </div>
+                                    </td>
+                                    <td class="text-end pe-4">
+                                        <form method="POST" action="{{ url_for('toggle_task', task_id=task.id) }}" class="d-inline">
+                                            <button type="submit" class="btn btn-sm btn-action btn-success" title="Mark Complete">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                        </form>
+                                        <form method="POST" action="{{ url_for('delete_task', task_id=task.id) }}" class="d-inline ms-1">
+                                            <button type="submit" class="btn btn-sm btn-action btn-danger" 
+                                                    onclick="return confirm('Delete this task?')" title="Delete Task">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- COMPLETED TASKS -->
+            {% set completed_tasks = tasks|selectattr('completed', 'equalto', 1)|list %}
+            {% if completed_tasks %}
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0">
+                    <h6 class="fw-bold text-success mb-0">
+                        <i class="fas fa-check-circle me-2"></i>Completed Tasks ({{ completed_tasks|length }})
+                    </h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0 opacity-75">
+                            <thead class="bg-light text-muted small text-uppercase">
+                                <tr>
+                                    <th class="ps-4 py-3">Task Details</th>
+                                    <th>Category</th>
+                                    <th>Completed</th>
+                                    <th class="text-end pe-4">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for task in completed_tasks %}
+                                <tr>
+                                    <td class="ps-4 py-3">
+                                        <div class="d-flex align-items-center">
+                                            <div class="status-indicator me-3 completed"></div>
+                                            <div>
+                                                <div class="fw-bold text-decoration-line-through text-muted">
+                                                    {{ task.title }}
+                                                </div>
+                                                {% if task.category_name %}
+                                                <span class="badge rounded-pill bg-light text-dark border-0 small fw-normal">
+                                                    <i class="fas fa-tag me-1 text-success"></i> 
+                                                    {{ task.category_name }}
+                                                </span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge rounded-pill bg-success text-white">
+                                            {{ task.priority }}
+                                        </span>
+                                    </td>
+                                    <td class="small text-muted">
+                                        <i class="far fa-calendar-check me-1"></i> 
+                                        {{ task.deadline or 'No date' }}
+                                    </td>
+                                    <td class="text-end pe-4">
+                                        <form method="POST" action="{{ url_for('toggle_task', task_id=task.id) }}" class="d-inline">
+                                            <button type="submit" class="btn btn-sm btn-action btn-warning" title="Mark as Active">
+                                                <i class="fas fa-undo"></i>
+                                            </button>
+                                        </form>
+                                        <form method="POST" action="{{ url_for('delete_task', task_id=task.id) }}" class="d-inline ms-1">
+                                            <button type="submit" class="btn btn-sm btn-action btn-danger" 
+                                                    onclick="return confirm('Permanently delete this task?')" title="Delete Task">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if not active_tasks and not completed_tasks %}
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center py-5">
+                    <img src="https://cdn-icons-png.flaticon.com/512/5057/5057247.png" style="width: 80px; opacity: 0.3;" class="mb-3">
+                    <p class="text-muted fw-bold">No tasks found!</p>
+                    <p class="text-muted small">Try changing your filters or add a new task.</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    .bg-soft-primary { background-color: rgba(67, 97, 238, 0.1); }
+    .status-indicator { 
+        width: 10px; 
+        height: 10px; 
+        border-radius: 50%; 
+    }
+    .status-indicator.high { background-color: #f72585; box-shadow: 0 0 5px rgba(247, 37, 133, 0.5); }
+    .status-indicator.medium { background-color: #f8961e; }
+    .status-indicator.low { background-color: #4cc9f0; }
+    .status-indicator.completed { background-color: #2ecc71; }
+    .status-indicator.overdue { 
+        background-color: #e74c3c; 
+        animation: pulse 1.5s infinite;
+    }
+    
+    .priority-badge-high { background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; padding: 4px 10px; font-size: 10px; border-radius: 20px; text-transform: uppercase; font-weight: bold; }
+    .priority-badge-medium { background: #fef3c7; color: #d97706; border: 1px solid #fde68a; padding: 4px 10px; font-size: 10px; border-radius: 20px; text-transform: uppercase; font-weight: bold; }
+    .priority-badge-low { background: #dcfce7; color: #16a34a; border: 1px solid #bbf7d0; padding: 4px 10px; font-size: 10px; border-radius: 20px; text-transform: uppercase; font-weight: bold; }
+
+    .btn-action { 
+        border-radius: 8px; 
+        width: 32px; 
+        height: 32px; 
+        padding: 0; 
+        display: inline-flex; 
+        align-items: center; 
+        justify-content: center; 
+        transition: all 0.2s; 
+    }
+    .btn-action:hover { transform: scale(1.1); }
+    
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+    }
+</style>
+{% endblock %}

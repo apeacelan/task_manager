@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% block title %}{{ group.name }} - Tasks{% endblock %}
+{% block content %}
+<div class="content-header">
+    <h2>{{ group.name }} - Tasks</h2>
+    <a href="{{ url_for('groups') }}" class="btn btn-outline">← Back to Groups</a>
+</div>
+
+{% if tasks %}
+<div class="task-table-container">
+    <table class="task-table">
+        <thead>
+            <tr>
+                <th>Task</th>
+                <th>Priority</th>
+                <th>Risk</th>
+                <th>Deadline</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for task in tasks %}
+            <tr>
+                <td>{{ task.title }}</td>
+                <td>
+                    <span class="priority-{{ task.priority|lower }}">
+                        {{ task.priority }}
+                    </span>
+                </td>
+                <td>{{ task.risk }}</td>
+                <td>{{ task.deadline or 'No deadline' }}</td>
+                <td>
+                    {% if task.completed %}
+                        <span class="status-completed">✓ Completed</span>
+                    {% else %}
+                        <span class="status-pending">○ Pending</span>
+                        {% if task.deadline and task.deadline < today|string %}
+                        <span class="badge bg-danger ms-1">Overdue</span>
+                        {% endif %}
+                    {% endif %}
+                </td>
+                <td>
+                    <form method="POST" action="{{ url_for('toggle_group_task', task_id=task.id) }}" style="display: inline;">
+                        <button type="submit" class="btn btn-sm {{ 'btn-success' if not task.completed else 'btn-secondary' }}">
+                            {% if task.completed %}
+                            <i class="fas fa-undo"></i>
+                            {% else %}
+                            <i class="fas fa-check"></i>
+                            {% endif %}
+                        </button>
+                    </form>
+            
+                    {% if user_role == 'admin' %}
+                    <!-- Кнопка удаления (только для админов) -->
+                     <form method="POST" action="{{ url_for('delete_group_task', task_id=task.id) }}" style="display: inline;">
+                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Delete this task?')">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+    <p>No tasks in this group yet.</p>
+{% endif %}
+
+{% if user_role == 'admin' %}
+<div class="form-card mt-30">
+    <h3>Add New Task to Group</h3>
+    <form method="POST" action="{{ url_for('add_group_task') }}">
+        <input type="hidden" name="group_id" value="{{ group.id }}">
+        <div class="form-group">
+            <input type="text" name="title" placeholder="Task title" required class="form-control">
+        </div>
+        <div class="form-group">
+            <select name="priority" class="form-control select-control">
+                <option value="High">High</option>
+                <option value="Medium" selected>Medium</option>
+                <option value="Low">Low</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <select name="risk" class="form-control select-control">
+                <option value="Normal">Normal</option>
+                <option value="Important">Important</option>
+                <option value="Critical">Critical</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <input type="date" name="deadline" class="form-control">
+        </div>
+        <button type="submit" class="btn btn-primary">Add Task</button>
+    </form>
+</div>
+{% endif %}
+
+<div class="mt-30">
+    <h3>Group Members</h3>
+    <div class="group-members">
+        {% for member in members %}
+        <div class="member-avatar" title="{{ member.username }} ({{ member.role }})">
+            {{ member.username[0]|upper }}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

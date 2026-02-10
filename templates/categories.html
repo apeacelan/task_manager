@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row mt-4">
+    <div class="col-md-4">
+        <div class="form-card">
+            <h4 class="mb-4">Create Category</h4>
+            <form method="POST" action="{{ url_for('add_category') }}">
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">Name</label>
+                    <input type="text" name="name" class="form-control" placeholder="Work, Hobby..." required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">Importance (Weight: 1-10)</label>
+                    <input type="range" name="weight" class="form-range" min="1" max="10" step="1" id="weightRange">
+                    <div class="text-center text-primary fw-bold" id="weightVal">5</div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">Color Label</label>
+                    <input type="color" name="color" value="#4361ee" class="form-control form-control-color w-100">
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Create Category</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <div class="card">
+            <h4 class="mb-4">Your Categories</h4>
+            <div class="row">
+                {% for category in categories %}
+                <div class="col-md-6 mb-3">
+                    <div class="p-3 border rounded d-flex justify-content-between align-items-center" style="border-left: 5px solid {{ category.color }} !important;">
+                        <div>
+                            <span class="fw-bold">{{ category.name }}</span><br>
+                            <small class="text-muted">Weight: {{ category.weight }}</small>
+                        </div>
+                        <i class="fas fa-tag" style="color: {{ category.color }}"></i>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('weightRange').oninput = function() {
+        document.getElementById('weightVal').innerHTML = this.value;
+    }
+</script>
+{% endblock %}
