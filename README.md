@@ -1,7 +1,7 @@
 # task_manager
 Flask app for managing your tasks with prioritizing and beautiful design
 
-Task manager flask web application deployment guide 
+**Task manager flask web application deployment guide **
 
  
 Prerequisites  
